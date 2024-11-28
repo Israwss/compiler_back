@@ -120,67 +120,79 @@ def Evaluacion(Acumulador):
 	return f"t{control-1}" 
 
 # F -- #;  I -- $;  IE -- +; W -- &; B -- /; 
-def SentidoPrograma(Programa,Expresiones):
-	global look,DireccionEtique, Pgro
-	PilaP = []
-	ConEtique= 0
-	for sentencia in Programa:
-		if sentencia[0] == "#": #Espero recibir ("F",nombreFuncion)
-			Pgro.append("E")
-			print(f"{look}: {sentencia[1]}: ")
-			DireccionEtique[sentencia[1]] = look
-			PilaP.append(f"RET")
-		elif sentencia == "$":
-			jola = Evaluacion(Expresiones.pop(0)) 
-			Pgro.append(["V","#",jola,0,f"Etiqueta{ConEtique}"])
-			print(f"{look}: if ({jola} == 0) goto Etiqueta{ConEtique}: ")
-			PilaP.append(f"Etiqueta{ConEtique}")
-			ConEtique = ConEtique + 1
-		elif sentencia == "+":
-			jola = Evaluacion(Expresiones.pop(0)) 
-			Pgro.append(["V","#",jola,0,f"Etiqueta{ConEtique}"])
-			print(f"{look}: if ({jola} == 0) goto Etiqueta{ConEtique}")
-			PilaP.append(f"Etiqueta{ConEtique+1}")
-			PilaP.append((f"Etiqueta{ConEtique+1}",f"Etiqueta{ConEtique}"))
-			ConEtique = ConEtique + 2
-		elif sentencia == "&":
-			Pgro.append("E")
-			print(f"{look}: Etiqueta{ConEtique}:")
-			DireccionEtique[f"Etiqueta{ConEtique}"] = look
-			look = look + 1
-			jola =  Evaluacion(Expresiones.pop(0))
-			Pgro.append(["V","#",jola,0,f"Etiqueta{ConEtique + 1}"])
-			print(f"{look}: if ({jola} == 0) goto Etiqueta{ConEtique + 1}")
-			PilaP.append((f"Etiqueta{ConEtique}",f"Etiqueta{ConEtique+1}"))
-			ConEtique = ConEtique + 2
-		elif sentencia == "?": 
-			jola =  Evaluacion(Expresiones.pop(0))
-			Pgro.append(["U",jola])
-			print(f"{look}: PUSH {jola}")
-			Pgro.append("R")
-			print(f"{look + 1}: RET")
-			look = look + 1
-		elif sentencia == "/":	
-			t = PilaP.pop()
-			if len(t)==2:
-				DireccionEtique[t[1]] = look + 1
-				Pgro.append(["G",t[0]])
-				Pgro.append(["E",t[1]]) 
-				print(f"{look}: goto {t[0]}\n{look + 1}: {t[1]}:")
-				look = look + 1
-			else:
-				if t == "RET":
-					Pgro.append("R")
-				else:
-					Pgro.append("E") 
-				DireccionEtique[t] = look
-				print(f"{look}: {t}:")
-		else:
-			jola = Evaluacion(Expresiones.pop(0))
-			Pgro.append(["A", "=", jola, 0, sentencia]) 
-			print(f"{look}: {sentencia} =  {jola}")
-		look = look + 1
+def SentidoPrograma(Programa, Expresiones):
+    """
+    Ejecuta el programa compilado. Genera y devuelve el código intermedio,
+    etiquetas de memoria y variables finales en una estructura clara y formateada.
+    """
+    global look, DireccionEtique, Pgro
+    output = []  # Lista para capturar las salidas formateadas
+    PilaP = []
+    ConEtique = 0
+
+    for sentencia in Programa:
+        if sentencia[0] == "#":  # Definición de función
+            output.append(f"{look}: {sentencia[1]}:")
+            DireccionEtique[sentencia[1]] = look
+            PilaP.append("RET")
+
+        elif sentencia == "$":  # Inicio de una estructura `if`
+            jola = Evaluacion(Expresiones.pop(0))
+            output.append(f"{look}: if {jola} == 0 goto Etiqueta{ConEtique}")
+            PilaP.append(f"Etiqueta{ConEtique}")
+            ConEtique += 1
+
+        elif sentencia == "+":  # Inicio de un `if-else`
+            jola = Evaluacion(Expresiones.pop(0))
+            output.append(f"{look}: if {jola} == 0 goto Etiqueta{ConEtique}")
+            PilaP.append(f"Etiqueta{ConEtique + 1}")
+            PilaP.append((f"Etiqueta{ConEtique + 1}", f"Etiqueta{ConEtique}"))
+            ConEtique += 2
+
+        elif sentencia == "&":  # Inicio de un `while`
+            output.append(f"{look}: Etiqueta{ConEtique}:")
+            DireccionEtique[f"Etiqueta{ConEtique}"] = look
+            look += 1
+            jola = Evaluacion(Expresiones.pop(0))
+            output.append(f"{look}: if {jola} == 0 goto Etiqueta{ConEtique + 1}")
+            PilaP.append((f"Etiqueta{ConEtique}", f"Etiqueta{ConEtique + 1}"))
+            ConEtique += 2
+
+        elif sentencia == "?":  # `return`
+            jola = Evaluacion(Expresiones.pop(0))
+            output.append(f"{look}: PUSH {jola}")
+            output.append(f"{look + 1}: RET")
+            look += 1
+
+        elif sentencia == "/":  # Fin de bloque o bucle
+            t = PilaP.pop()
+            if isinstance(t, tuple):
+                DireccionEtique[t[1]] = look + 1
+                output.append(f"{look}: goto {t[0]}\n{look + 1}: {t[1]}:")
+                look += 1
+            else:
+                output.append(f"{look}: {t}:")
+                DireccionEtique[t] = look
+
+        else:  # Asignaciones
+            jola = Evaluacion(Expresiones.pop(0))
+            output.append(f"{look}: {sentencia} = {jola}")
+        look += 1
+
 		
+
+
+	
+	
+	
+    return {
+        "program_output": "\n".join(output),  # Devuelve el programa formateado como un string
+        "memory_labels": DireccionEtique,
+        "final_variables": {f"t{i}": Pgro[i] for i in range(len(Pgro)) if isinstance(Pgro[i], list)},
+    }
+
+
+   
 
 if __name__ == '__main__':
 	s = '''

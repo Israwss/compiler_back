@@ -412,20 +412,34 @@ def p_error(p):
 
 
 #Puedo guardar en las sentencias el nombre de asignacion de la variable, es decir, en vez de A, guarde i y k
-def Pruebas(s): 	
-		result = parser.parse(s)
-		print("Prueba de sintaxis superada")
-		if (len(ERROR) != 0):
-			print("Errores semanticos: ")
-			print(ERROR[0]) #Solo muestra el primer error, ya que apartir de ahi genera una cascada de errores o se esperan
-			exit(-1)
-		if result: 	
-			print("Programa Corrido Correctamente")
-			print("Lista de simbolos: ")   
-			print(ListaSimbolos)
-			print("Lista de funciones: ")
-			print(ListaFunciones)
-			return result
+def Pruebas(s):
+    """Ejecuta el análisis del código fuente y retorna el resultado."""
+    global ERROR, ListaSimbolos, ListaFunciones, EPrograma, Expresiones, bloque
+
+    # Reinicia las variables globales
+    ERROR = []
+    ListaSimbolos = {}
+    ListaFunciones = {}
+    EPrograma = []
+    Expresiones = []
+    bloque = []
+
+    result = parser.parse(s)
+    response = {
+        "syntax_passed": True,
+        "semantic_errors": [],
+        "symbols": ListaSimbolos,
+        "functions": ListaFunciones,
+        "parsed_program": None,
+    }
+
+    if ERROR:
+        response["semantic_errors"] = ERROR
+        ERROR = []
+    if result:
+        response["parsed_program"] = result
+    return response
+
 
 lexer = lex.lex()
 parser = yacc.yacc()

@@ -8,7 +8,7 @@
 #Recibo llamada "L" = Significa que metemos los paramtros en la pila y se guarda la ultima direccion leida.  
 #Recibo meter valor a pila "U" = cuando se pasan como parametros ciertos valores primero se meten a pila antes de llamar a la funcion
 #Recibo sacar valor de pila "0" = cundo se obtienen los valores de la pila
-
+# #,funcion2,?,/,#,main,kola,a,$,a,/,+,a,/,a,/,&,a,/,/
 
 #Todas las variables creadas o identificadores seran guardados y tratadas de igual manera, ya que al final y al cabo son 
 
